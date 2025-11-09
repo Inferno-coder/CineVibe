@@ -2,6 +2,7 @@ import React from "react";
 import HeroSection from "../components/HeroSection";
 import TrendingMovies from "../components/TrendingMovies";
 import UpcomingMovies from "../components/UpcomingMovies";
+import Footer from "../components/Footer";
 
 const HomePage = () => {
   return (
@@ -9,6 +10,7 @@ const HomePage = () => {
       <HeroSection />
       <TrendingMovies />
       <UpcomingMovies />
+      <Footer />
     </div>
   );
 };

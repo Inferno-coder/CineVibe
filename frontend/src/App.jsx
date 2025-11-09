@@ -21,6 +21,7 @@ import HomePage from "./pages/HomePage";
 import MoviesPage from "./pages/MoviesPage";
 import MyBookingsPage from "./pages/MyBookingsPage";
 import { LOCATIONS } from "./assets/district";
+import SeatBookingPage from "./pages/SeatBookingPage";
 
 export default function App() {
   const { user, isSignedIn } = useUser();
@@ -107,7 +108,7 @@ export default function App() {
             to="/movies"
             className="flex items-center gap-1 hover:text-yellow-300 transition-colors"
           >
-            <Ticket className="w-5 h-5" /> Movies
+            <Ticket className="w-5 h-5" /> Theatres
           </Link>
           <Link
             to="/my-bookings"
@@ -152,6 +153,7 @@ export default function App() {
               isSignedIn ? <MyBookingsPage /> : <Navigate to="/" replace />
             }
           />
+          <Route path="/booking" element={<SeatBookingPage />} />
           <Route path="*" element={<h2>404 - Page Not Found</h2>} />
         </Routes>
       </main>
