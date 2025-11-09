@@ -14,15 +14,21 @@ import {
 } from "react-router-dom";
 import { Film, Ticket, Home, LogIn, User, MapPin } from "lucide-react";
 import { useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { setLocation } from "./slicers/locationSlice";
 
 import HomePage from "./pages/HomePage";
 import MoviesPage from "./pages/MoviesPage";
 import MyBookingsPage from "./pages/MyBookingsPage";
-import { locations } from "./assets/district";
+import { LOCATIONS } from "./assets/district";
 
 export default function App() {
   const { user, isSignedIn } = useUser();
-  const [selectedLocation, setSelectedLocation] = useState("Chennai");
+  const dispatch = useDispatch();
+  const selectedLocation = useSelector(
+    (state) => state.location.selectedLocation
+  );
+
   const [showDropdown, setShowDropdown] = useState(false);
 
   return (
@@ -69,15 +75,12 @@ export default function App() {
 
             {/* ✨ Scrollable Glassmorphic Dropdown (with invisible scroll) */}
             {showDropdown && (
-              <div
-                className="absolute right-0 mt-2 w-44 max-h-60 overflow-y-auto bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-lg z-50
-                thin-scroll hover:scroll-visible"
-              >
-                {locations.map((loc) => (
+              <div className="absolute right-0 mt-2 w-44 max-h-60 overflow-y-auto bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-lg z-50 thin-scroll hover:scroll-visible">
+                {Object.values(LOCATIONS).map((loc) => (
                   <button
                     key={loc}
                     onClick={() => {
-                      setSelectedLocation(loc);
+                      dispatch(setLocation(loc)); // ✅ Redux update
                       setShowDropdown(false);
                     }}
                     className={`block w-full text-left px-4 py-2 text-sm ${
@@ -139,7 +142,7 @@ export default function App() {
       </header>
 
       {/* 🧭 Main Routes */}
-      <main className="p-6">
+      <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/movies" element={<MoviesPage />} />

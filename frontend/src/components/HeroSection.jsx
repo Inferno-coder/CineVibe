@@ -7,7 +7,7 @@ const HeroSection = () => {
       className="relative h-[80vh] flex items-center justify-start bg-cover bg-center text-white"
       style={{
         backgroundImage:
-          "url('https://image.tmdb.org/t/p/original/xOMo8BRK7PfcJv9JCnx7s5hj0PX.jpg')",
+          "url('https://image.tmdb.org/t/p/original/xOMo8BRK7PfcJv9JCnx7s5hj0PX.jpgp",
       }}
     >
       {/* Overlay gradient */}
