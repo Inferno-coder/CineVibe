@@ -1,15 +1,96 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlserver"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  password  String
+  name      String?
+  role      String    @default("USER")
+  bookings  Booking[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Movie {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  duration    Int
+  genre       String
+  releaseDate DateTime
+  posterUrl   String?
+  shows       Show[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Theater {
+  id        Int      @id @default(autoincrement())
+  name      String
+  location  String
+  screens   Screen[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Screen {
+  id        Int      @id @default(autoincrement())
+  number    Int
+  theaterId Int
+  theater   Theater  @relation(fields: [theaterId], references: [id])
+  seats     Seat[]
+  shows     Show[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Seat {
+  id           Int           @id @default(autoincrement())
+  row          String
+  number       Int
+  type         String        @default("STANDARD")
+  screenId     Int
+  screen       Screen        @relation(fields: [screenId], references: [id])
+  bookingSeats BookingSeat[]
+}
+
+model Show {
+  id        Int       @id @default(autoincrement())
+  startTime DateTime
+  movieId   Int
+  movie     Movie     @relation(fields: [movieId], references: [id])
+  screenId  Int
+  screen    Screen    @relation(fields: [screenId], references: [id])
+  bookings  Booking[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Booking {
+  id           Int           @id @default(autoincrement())
+  userId       Int
+  user         User          @relation(fields: [userId], references: [id])
+  showId       Int
+  show         Show          @relation(fields: [showId], references: [id])
+  bookingSeats BookingSeat[]
+  totalAmount  Float
+  status       String        @default("PENDING")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model BookingSeat {
+  bookingId Int
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  seatId    Int
+  seat      Seat    @relation(fields: [seatId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([bookingId, seatId])
 }
