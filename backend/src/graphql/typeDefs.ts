@@ -94,6 +94,6 @@ export const typeDefs = gql`
     createMovie(title: String!, duration: Int!, genre: String!, releaseDate: String!): Movie!
     createTheater(name: String!, location: String!): Theater!
     createShow(movieId: ID!, screenId: ID!, startTime: String!): Show!
-    bookTicket(userId: ID!, showId: ID!, seatIds: [ID!]!): Booking!
+    bookTicket(userId: ID, email: String, showId: ID!, seatIds: [ID!]!): Booking!
   }
 `;

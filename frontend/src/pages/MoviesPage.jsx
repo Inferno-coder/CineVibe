@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { Search, Star, Ticket, Clock } from "lucide-react";
 import { useSelector } from "react-redux";
-import { THEATRE_DATA } from "../assets/theatreData";
 import { Navigate, useNavigate } from "react-router-dom";
+import { useQuery } from "@apollo/client/react";
+import { GET_THEATERS } from "../graphql/queries";
 
 export default function MoviesPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -11,7 +12,38 @@ export default function MoviesPage() {
   );
 
   const navigate = useNavigate();
-  const theatres = THEATRE_DATA[selectedLocation] || [];
+  const { loading, error, data } = useQuery(GET_THEATERS);
+
+  if (loading) return <div className="text-white text-center mt-20">Loading movies...</div>;
+  if (error) return <div className="text-red-500 text-center mt-20">Error loading movies: {error.message}</div>;
+
+  // Filter theaters by location
+  const theaters = data.theaters.filter(t => t.location === selectedLocation) || [];
+
+  // Process data to match UI structure (Theater -> Movies)
+  const processedTheaters = theaters.map(theater => {
+    const moviesMap = new Map();
+    
+    theater.screens.forEach(screen => {
+      screen.shows.forEach(show => {
+        if (!moviesMap.has(show.movie.id)) {
+          moviesMap.set(show.movie.id, {
+            ...show.movie,
+            image: show.movie.posterUrl || "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8bW92aWV8ZW58MHx8MHx8fDA%3D", // Fallback image
+            timings: []
+          });
+        }
+        const movie = moviesMap.get(show.movie.id);
+        const time = new Date(Number(show.startTime)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        movie.timings.push({ id: show.id, time });
+      });
+    });
+
+    return {
+      ...theater,
+      movies: Array.from(moviesMap.values())
+    };
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 text-white py-12 px-6">
@@ -40,8 +72,8 @@ export default function MoviesPage() {
       </div>
 
       {/* 🎭 Theatre and Movies */}
-      {theatres.length > 0 ? (
-        theatres.map((theatre, index) => (
+      {processedTheaters.length > 0 ? (
+        processedTheaters.map((theatre, index) => (
           <div key={index} className="mb-16">
             {/* Theatre Name */}
             <h2 className="text-2xl font-bold text-yellow-300 mb-6 border-l-4 border-yellow-400 pl-3">
@@ -78,13 +110,13 @@ export default function MoviesPage() {
 
                       {/* Showtimes */}
                       <div className="mt-3 flex flex-wrap gap-2">
-                        {movie.timings.map((time) => (
+                        {movie.timings.map((show, idx) => (
                           <span
-                            key={time}
+                            key={idx}
                             className="bg-yellow-300/20 border border-yellow-400 text-yellow-200 px-2 py-1 rounded-md text-xs font-medium hover:bg-yellow-300 hover:text-black transition"
                           >
                             <Clock className="w-3 h-3 inline mr-1" />
-                            {time}
+                            {show.time}
                           </span>
                         ))}
                       </div>

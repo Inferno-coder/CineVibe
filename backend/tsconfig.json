@@ -2,6 +2,7 @@
     "compilerOptions": {
         "target": "es2020",
         "module": "commonjs",
+        "moduleResolution": "node",
         "lib": [
             "es2020"
         ],
@@ -10,7 +11,10 @@
         "strict": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
-        "forceConsistentCasingInFileNames": true
+        "forceConsistentCasingInFileNames": true,
+        "types": [
+            "node"
+        ]
     },
     "include": [
         "src/**/*"

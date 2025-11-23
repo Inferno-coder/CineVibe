@@ -23,6 +23,9 @@ import MyBookingsPage from "./pages/MyBookingsPage";
 import { LOCATIONS } from "./assets/district";
 import SeatBookingPage from "./pages/SeatBookingPage";
 
+import { Toaster } from "react-hot-toast";
+import PaymentPage from "./pages/PaymentPage";
+
 export default function App() {
   const { user, isSignedIn } = useUser();
   const dispatch = useDispatch();
@@ -34,6 +37,7 @@ export default function App() {
 
   return (
     <Router>
+      <Toaster position="top-center" reverseOrder={false} />
       {/* 🌈 Header */}
       <header className="flex justify-between items-center px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg relative">
         {/* 🎬 Logo */}
@@ -154,6 +158,7 @@ export default function App() {
             }
           />
           <Route path="/booking" element={<SeatBookingPage />} />
+          <Route path="/payment" element={<PaymentPage />} />
           <Route path="*" element={<h2>404 - Page Not Found</h2>} />
         </Routes>
       </main>

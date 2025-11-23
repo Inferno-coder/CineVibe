@@ -50,15 +50,44 @@ export const resolvers = {
       });
     },
     bookTicket: async (_: any, args: any) => {
-      const { userId, showId, seatIds } = args;
-      // Calculate total amount (simplified)
+      const { userId, email, showId, seatIds } = args;
+      
+      let targetUserId = Number(userId);
+
+      // If userId is invalid (NaN) or missing, try to find/create by email
+      if (!targetUserId || isNaN(targetUserId)) {
+        if (email) {
+          let user = await prisma.user.findUnique({ where: { email } });
+          if (!user) {
+             // Create a dummy user if not exists
+             user = await prisma.user.create({
+               data: {
+                 email,
+                 name: email.split('@')[0],
+                 password: 'password123', // Dummy password
+                 role: 'USER'
+               }
+             });
+          }
+          targetUserId = user.id;
+        } else {
+          // Fallback to the first user (Demo User) if no email provided
+          const defaultUser = await prisma.user.findFirst();
+          if (defaultUser) {
+            targetUserId = defaultUser.id;
+          } else {
+            throw new Error('No user found to book ticket');
+          }
+        }
+      }
+
       const show = await prisma.show.findUnique({ where: { id: Number(showId) } });
       if (!show) throw new Error('Show not found');
       
       // Create booking with explicit BookingSeat records
       return prisma.booking.create({
         data: {
-          userId: Number(userId),
+          userId: targetUserId,
           showId: Number(showId),
           totalAmount: 100 * seatIds.length, // Placeholder price
           bookingSeats: {

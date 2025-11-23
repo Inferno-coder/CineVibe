@@ -1,16 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Armchair, ArrowLeft, CheckCircle } from "lucide-react";
+import { useQuery, useMutation } from "@apollo/client/react";
+import { GET_SHOW } from "../graphql/queries";
+import { BOOK_TICKET } from "../graphql/mutations";
+import { useUser } from "@clerk/clerk-react";
 
 export default function SeatBookingPage() {
   const navigate = useNavigate();
   const { state } = useLocation();
+  const { user } = useUser();
 
   // ✅ Hooks declared before any early return
   const [selectedShowtime, setSelectedShowtime] = useState(
-    state?.timings?.[0] || ""
+    state?.timings?.[0] || null
   );
   const [selectedSeats, setSelectedSeats] = useState([]);
+
+  const { loading, error, data, refetch } = useQuery(GET_SHOW, {
+    variables: { id: selectedShowtime?.id },
+    skip: !selectedShowtime,
+  });
+
+
 
   // ✅ Safe early return after hooks
   if (!state) {
@@ -23,12 +35,15 @@ export default function SeatBookingPage() {
 
   const { theatreName, movieTitle, image, timings } = state;
 
-  // 🎟️ Create 40 seats as example
-  const seats = Array.from({ length: 40 }, (_, i) => i + 1);
+  // Use fetched seats or fallback to empty array
+  const seats = data?.show?.screen?.seats || [];
 
   const toggleSeat = (seat) => {
+    if (seat.isBooked) return;
     setSelectedSeats((prev) =>
-      prev.includes(seat) ? prev.filter((s) => s !== seat) : [...prev, seat]
+      prev.some((s) => s.id === seat.id)
+        ? prev.filter((s) => s.id !== seat.id)
+        : [...prev, seat]
     );
   };
 
@@ -37,12 +52,25 @@ export default function SeatBookingPage() {
       alert("Please select at least one seat!");
       return;
     }
-    alert(
-      `🎉 Booking Confirmed!\nMovie: ${movieTitle}\nTheatre: ${theatreName}\nShowtime: ${selectedShowtime}\nSeats: ${selectedSeats.join(
-        ", "
-      )}`
-    );
-    navigate("/", { replace: true });
+    if (!user) {
+      alert("Please sign in to book tickets!");
+      return;
+    }
+
+    // Calculate total amount (assuming $10 per seat for now)
+    const totalAmount = selectedSeats.length * 10;
+
+    navigate("/payment", {
+      state: {
+        theatreName,
+        movieTitle,
+        showTime: selectedShowtime.time,
+        seats: selectedSeats.map(s => `${s.row}${s.number}`),
+        totalAmount,
+        showId: selectedShowtime.id,
+        seatIds: selectedSeats.map((s) => s.id),
+      }
+    });
   };
 
   return (
@@ -69,17 +97,17 @@ export default function SeatBookingPage() {
 
             {/* 🕒 Showtimes */}
             <div className="mt-4 flex flex-wrap gap-2">
-              {timings.map((time) => (
+              {timings.map((show) => (
                 <button
-                  key={time}
-                  onClick={() => setSelectedShowtime(time)}
+                  key={show.id}
+                  onClick={() => setSelectedShowtime(show)}
                   className={`px-3 py-1 text-sm rounded-md border transition-all duration-200 ${
-                    selectedShowtime === time
+                    selectedShowtime?.id === show.id
                       ? "bg-yellow-400 text-black border-yellow-400 font-semibold"
                       : "border-yellow-300 text-yellow-300 hover:bg-yellow-400 hover:text-black"
                   }`}
                 >
-                  {time}
+                  {show.time}
                 </button>
               ))}
             </div>
@@ -97,21 +125,34 @@ export default function SeatBookingPage() {
         </div>
 
         {/* 💺 Seat Grid */}
-        <div className="grid grid-cols-8 gap-3 justify-items-center mb-8">
-          {seats.map((seat) => (
-            <button
-              key={seat}
-              onClick={() => toggleSeat(seat)}
-              className={`p-3 rounded-lg transition-all ${
-                selectedSeats.includes(seat)
-                  ? "bg-yellow-400 text-black scale-110"
-                  : "bg-white/10 hover:bg-yellow-300/40 text-white"
-              }`}
-            >
-              <Armchair className="w-5 h-5" />
-            </button>
-          ))}
-        </div>
+        {loading ? (
+          <div className="text-center py-10">Loading seats...</div>
+        ) : (
+          <div className="grid grid-cols-8 gap-3 justify-items-center mb-8">
+            {seats.map((seat) => {
+              const isSelected = selectedSeats.some((s) => s.id === seat.id);
+              const isBooked = seat.isBooked;
+              
+              return (
+                <button
+                  key={seat.id}
+                  onClick={() => toggleSeat(seat)}
+                  disabled={isBooked}
+                  className={`p-3 rounded-lg transition-all ${
+                    isBooked
+                      ? "bg-gray-600 cursor-not-allowed"
+                      : isSelected
+                      ? "bg-yellow-400 text-black scale-110"
+                      : "bg-white/10 hover:bg-yellow-300/40 text-white"
+                  }`}
+                  title={isBooked ? "Booked" : `Row ${seat.row} Seat ${seat.number}`}
+                >
+                  <Armchair className="w-5 h-5" />
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* 🧭 Seat Legend */}
         <div className="flex justify-center gap-8 text-sm mb-8 text-gray-300">
@@ -138,13 +179,13 @@ export default function SeatBookingPage() {
           <p className="mb-2">
             ⏰ Showtime:{" "}
             <span className="text-yellow-300 font-medium">
-              {selectedShowtime}
+              {selectedShowtime?.time}
             </span>
           </p>
           <p>
             💺 Seats:{" "}
             <span className="text-yellow-300 font-medium">
-              {selectedSeats.length > 0 ? selectedSeats.join(", ") : "None"}
+              {selectedSeats.length > 0 ? selectedSeats.map(s => s.number).join(", ") : "None"}
             </span>
           </p>
         </div>
