@@ -6,6 +6,7 @@ export const resolvers = {
   Query: {
     users: () => prisma.user.findMany({ include: { bookings: true } }),
     user: (_: any, { id }: { id: string }) => prisma.user.findUnique({ where: { id: Number(id) }, include: { bookings: true } }),
+    userByEmail: (_: any, { email }: { email: string }) => prisma.user.findUnique({ where: { email }, include: { bookings: true } }),
     movies: () => prisma.movie.findMany({ include: { shows: true } }),
     movie: (_: any, { id }: { id: string }) => prisma.movie.findUnique({ where: { id: Number(id) }, include: { shows: true } }),
     theaters: () => prisma.theater.findMany({ include: { screens: true } }),

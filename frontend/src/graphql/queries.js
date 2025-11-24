@@ -88,3 +88,37 @@ export const GET_SHOW = gql`
     }
   }
 `;
+
+export const GET_USER_BOOKINGS = gql`
+  query GetUserBookings($email: String!) {
+    userByEmail(email: $email) {
+      id
+      bookings {
+        id
+        totalAmount
+        status
+        createdAt
+        show {
+          startTime
+          movie {
+            title
+            posterUrl
+            duration
+          }
+          screen {
+            number
+            theater {
+              name
+              location
+            }
+          }
+        }
+        seats {
+          row
+          number
+          type
+        }
+      }
+    }
+  }
+`;

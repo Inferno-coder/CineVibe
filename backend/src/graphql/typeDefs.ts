@@ -82,6 +82,7 @@ export const typeDefs = gql`
   type Query {
     users: [User!]!
     user(id: ID!): User
+    userByEmail(email: String!): User
     movies: [Movie!]!
     movie(id: ID!): Movie
     theaters: [Theater!]!
