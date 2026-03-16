@@ -17,6 +17,7 @@ import ListBookings from "./pages/admin/ListBookings";
 
 const App = () => {
   const isAdminRoute = useLocation().pathname.startsWith("/admin");
+  //test commit
   return (
     <>
       <Toaster />
