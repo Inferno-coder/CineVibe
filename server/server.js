@@ -6,6 +6,7 @@ import connectCloudinary from "./config/cloudinary.js";
 import { clerkMiddleware } from "@clerk/express";
 import { serve } from "inngest/express";
 import { inngest, functions } from "./inggest/index.js";
+import { clerkWebhooks } from "./controllers/webhookController.js";
 // App Config
 const app = express();
 const port = process.env.PORT || 4000;
@@ -23,6 +24,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/inngest", serve({ client: inngest, functions }));
+app.post("/api/webhooks/clerk", clerkWebhooks);
 // Listener
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
