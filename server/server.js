@@ -22,7 +22,12 @@ app.use(express.json({
     req.rawBody = buf;
   }
 }));
-app.use(cors());
+app.use(cors({
+  origin: ["https://cinevibe-teal.vercel.app", "http://localhost:5173", "http://localhost:5174"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "ngrok-skip-browser-warning"],
+  credentials: true
+}));
 app.use(clerkMiddleware());
 
 // API Endpoints

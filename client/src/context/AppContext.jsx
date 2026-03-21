@@ -7,6 +7,11 @@ export const AppContext = createContext();
 
 export const AppContextProvider = (props) => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  
+  if (backendUrl && backendUrl.includes("ngrok")) {
+    axios.defaults.headers.common["ngrok-skip-browser-warning"] = "true";
+  }
+
   const { user } = useUser();
   const [userData, setUserData] = useState(null);
   const [movies, setMovies] = useState([]);
