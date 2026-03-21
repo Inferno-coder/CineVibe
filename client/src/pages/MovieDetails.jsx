@@ -9,11 +9,32 @@ import axios from "axios";
 
 const MovieDetails = () => {
   const { id } = useParams();
-  const { backendUrl } = useContext(AppContext);
+  const { backendUrl, userData, getUserData } = useContext(AppContext);
   const [movie, setMovie] = useState(null);
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isFavorite, setIsFavorite] = useState(false);
+
+  // Derive isFavorite from userData
+  const isFavorite = userData?.favorites?.some((fav) => fav._id === movie?._id) || false;
+
+  const handleToggleFavorite = async () => {
+    if (!userData) {
+      toast.error("Please login to add to favorites");
+      return;
+    }
+    try {
+      const { data } = await axios.post(backendUrl + "/api/user/toggle-favorite", {
+        userId: userData._id,
+        movieId: movie._id,
+      });
+      if (data.success) {
+        toast.success(data.message);
+        getUserData(); // Refresh user data to update favorites list in context
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const fetchMovieData = async () => {
     try {
@@ -26,7 +47,6 @@ const MovieDetails = () => {
       }
     } catch (error) {
       console.error("Fetch Movie Data Error:", error.response?.data?.message || error.message);
-      // Optional: import toast from react-hot-toast if available or just log
     }
   };
 
@@ -152,7 +172,7 @@ const MovieDetails = () => {
                 </button>
 
                 <button
-                  onClick={() => setIsFavorite(!isFavorite)}
+                  onClick={handleToggleFavorite}
                   className="rounded-full bg-white/10 p-3 backdrop-blur-md transition hover:bg-white/20"
                 >
                   <Heart
@@ -194,7 +214,21 @@ const MovieDetails = () => {
         </div>
       </div>
 
-      {shows.length > 0 && <DateSelect id={id} shows={shows} />}
+      {/* Shows / Date Selection */}
+      <div id="dateSelect" className="relative z-10 px-6 md:px-10 pb-24">
+        {shows.length > 0 ? (
+          <DateSelect id={id} shows={shows} />
+        ) : (
+          <div className="mt-12 p-10 rounded-3xl bg-white/5 border border-white/10 text-center backdrop-blur-md">
+            <Calendar className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-gray-300">No Shows Available</h3>
+            <p className="text-gray-500 mt-2 max-w-md mx-auto">
+              We couldn't find any upcoming shows for this movie in your region. 
+              Please check back later or try another movie!
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

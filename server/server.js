@@ -8,6 +8,7 @@ import { clerkWebhooks } from "./controllers/webhookController.js";
 import userRouter from "./routes/userRouter.js";
 import movieRouter from "./routes/movieRouter.js";
 import showRouter from "./routes/showRouter.js";
+import bookingRouter from "./routes/bookingRouter.js";
 
 // App Config
 const app = express();
@@ -33,6 +34,7 @@ app.post("/api/webhooks/clerk", clerkWebhooks);
 app.use("/api/user", userRouter);
 app.use("/api/movie", movieRouter);
 app.use("/api/show", showRouter);
+app.use("/api/booking", bookingRouter);
 
 // Listener
 app.listen(port, () => {

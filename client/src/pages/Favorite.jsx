@@ -1,12 +1,11 @@
-import React from "react";
+import React, { useContext } from "react";
 import BlurColor from "../components/BlurColor";
 import MovieCard from "../components/MovieCard";
-import { dummyShowsData } from "../assets/assets";
-
-// later you can replace this with redux / context / api data
-const favoriteMovies = dummyShowsData; // example: [] or dummyShowsData
+import { AppContext } from "../context/AppContext";
 
 const Favorite = () => {
+  const { userData, userDataLoading } = useContext(AppContext);
+  const favoriteMovies = userData?.favorites || [];
   return (
     <div className="relative min-h-screen bg-black px-6 md:px-10 py-16 overflow-hidden">
       {/* Background Glow */}

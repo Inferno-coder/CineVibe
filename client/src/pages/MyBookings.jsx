@@ -1,27 +1,41 @@
-import React, { useEffect, useState } from "react";
-import { dummyBookingData } from "../assets/assets";
+import React, { useEffect, useState, useContext } from "react";
 import Loading from "../components/Loading";
 import { CalendarIcon, ClockIcon, TicketIcon } from "lucide-react";
+import { AppContext } from "../context/AppContext";
+import axios from "axios";
 
 const MyBookings = () => {
+  const { backendUrl, userData } = useContext(AppContext);
   const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const getMyBookings = () => {
-    // Artificial delay to show loading state
-    setTimeout(() => {
-      setBookings(dummyBookingData);
+  const getMyBookings = async () => {
+    try {
+      if (!userData) return;
+      const { data } = await axios.post(backendUrl + "/api/booking/user", { 
+        userId: userData._id 
+      });
+      if (data.success) {
+        setBookings(data.bookings);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
       setIsLoading(false);
-    }, 600);
+    }
   };
 
   useEffect(() => {
-    getMyBookings();
-  }, []);
+    if (userData) {
+      getMyBookings();
+    } else {
+      setIsLoading(false);
+    }
+  }, [userData]);
 
-  return isLoading ? (
-    <Loading />
-  ) : (
+  if (isLoading) return <Loading />;
+
+  return (
     <div className="min-h-screen bg-black text-white pt-28 pb-20 px-4 md:px-10 relative overflow-hidden">
       {/* Background glow */}
       <div className="absolute top-0 right-0 w-[500px] h-96 bg-red-600/10 blur-[120px] rounded-full pointer-events-none" />
@@ -41,15 +55,11 @@ const MyBookings = () => {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
             {bookings.map((booking, index) => {
-              const movieDate = new Date(booking.show.showDateTime);
+              const movieDate = new Date(booking.showId.date);
               const dateString = movieDate.toLocaleDateString("en-US", {
                 weekday: "short",
                 month: "short",
                 day: "numeric",
-              });
-              const timeString = movieDate.toLocaleTimeString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
               });
 
               return (
@@ -65,16 +75,16 @@ const MyBookings = () => {
                     {/* Poster Section */}
                     <div className="w-full sm:w-40 shrink-0 relative mt-3 sm:mt-0 rounded-2xl sm:rounded-none sm:rounded-l-3xl overflow-hidden">
                       <img
-                        src={booking.show.movie.poster_path}
-                        alt={booking.show.movie.title}
+                        src={booking.movieId.poster_path}
+                        alt={booking.movieId.title}
                         className="w-full h-48 sm:h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      {/* Paid Status Pill on top of image for mobile */}
+                      {/* Status Pill on top of image for mobile */}
                       <div className="absolute top-3 left-3 sm:hidden">
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md shadow-lg ${booking.isPaid ? "bg-green-500/80 text-white" : "bg-red-500/80 text-white"}`}
+                          className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md shadow-lg bg-green-500/80 text-white"
                         >
-                          {booking.isPaid ? "Paid" : "Unpaid"}
+                          {booking.status}
                         </span>
                       </div>
                     </div>
@@ -84,20 +94,20 @@ const MyBookings = () => {
                       <div>
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="text-xl font-bold line-clamp-1 pr-2">
-                            {booking.show.movie.title}
+                            {booking.movieId.title}
                           </h3>
-                          {/* Paid Status Pill on top right for desktop */}
+                          {/* Status Pill on top right for desktop */}
                           <div className="hidden sm:block shrink-0">
                             <span
-                              className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg ${booking.isPaid ? "bg-green-500/20 text-green-400 border border-green-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}
+                              className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg bg-green-500/20 text-green-400 border border-green-500/30"
                             >
-                              {booking.isPaid ? "Paid" : "Pending"}
+                              {booking.status}
                             </span>
                           </div>
                         </div>
 
                         <p className="text-xs text-gray-400 mb-4 uppercase tracking-widest">
-                          {booking.show.movie.genres
+                          {booking.movieId.genres
                             .map((g) => g.name)
                             .join(", ")}
                         </p>
@@ -109,7 +119,7 @@ const MyBookings = () => {
                           </div>
                           <div className="flex items-center text-sm text-gray-300 gap-2">
                             <ClockIcon className="w-4 h-4 text-red-500" />
-                            <span>{timeString}</span>
+                            <span>{booking.showId.time}</span>
                           </div>
                         </div>
                       </div>
@@ -120,10 +130,10 @@ const MyBookings = () => {
                       <div className="flex justify-between items-end">
                         <div>
                           <p className="text-xs text-gray-500 mb-1 uppercase tracking-wider">
-                            Seats ({booking.bookedSeats.length})
+                            Seats ({booking.seats.length})
                           </p>
                           <p className="font-semibold text-sm">
-                            {booking.bookedSeats.join(", ")}
+                            {booking.seats.join(", ")}
                           </p>
                         </div>
                         <div className="text-right flex flex-col items-end gap-2">
@@ -135,18 +145,6 @@ const MyBookings = () => {
                               ${booking.amount}
                             </p>
                           </div>
-                          {!booking.isPaid && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // Add payment handler logic here
-                                alert("Redirecting to payment...");
-                              }}
-                              className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold py-1.5 px-4 rounded-lg shadow-md transition-all hover:scale-105"
-                            >
-                              Pay Now
-                            </button>
-                          )}
                         </div>
                       </div>
                     </div>

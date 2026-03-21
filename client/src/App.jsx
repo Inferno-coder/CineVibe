@@ -15,6 +15,8 @@ import AddShows from "./pages/admin/AddShows";
 import ListShows from "./pages/admin/ListShows";
 import ListBookings from "./pages/admin/ListBookings";
 
+import ProtectAdmin from "./components/ProtectAdmin";
+
 const App = () => {
   const isAdminRoute = useLocation().pathname.startsWith("/admin");
   //test commit
@@ -29,7 +31,16 @@ const App = () => {
         <Route path="/favorite" element={<Favorite />} />
         <Route path="/my-bookings" element={<MyBookings />} />
         <Route path="/book/:showId" element={<SeatLayout />} />
-        <Route path="/admin/*" element={<Layout />}>
+        
+        {/* Admin Routes Protected */}
+        <Route 
+          path="/admin/*" 
+          element={
+            <ProtectAdmin>
+              <Layout />
+            </ProtectAdmin>
+          }
+        >
           <Route index element={<Dashboard />} />
           <Route path="add-shows" element={<AddShows />} />
           <Route path="list-shows" element={<ListShows />} />

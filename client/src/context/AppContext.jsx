@@ -11,6 +11,7 @@ export const AppContextProvider = (props) => {
   const [userData, setUserData] = useState(null);
   const [movies, setMovies] = useState([]);
   const [genresList, setGenresList] = useState([]);
+  const [userDataLoading, setUserDataLoading] = useState(true);
 
   // Fetch real movie data directly from TMDB API
   const getMoviesData = async () => {
@@ -76,20 +77,23 @@ export const AppContextProvider = (props) => {
   };
 
   // Fetch User Data from MongoDB
-  const getUserData = async () => {
-    try {
-      const { data } = await axios.post(backendUrl + "/api/user/get-user-data", {
-        userId: user.id,
-      });
-      if (data.success) {
-        setUserData(data.user);
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error(error.message);
-    }
-  };
+   const getUserData = async () => {
+     try {
+       setUserDataLoading(true);
+       const { data } = await axios.post(backendUrl + "/api/user/get-user-data", {
+         userId: user.id,
+       });
+       if (data.success) {
+         setUserData(data.user);
+       } else {
+         toast.error(data.message);
+       }
+     } catch (error) {
+       toast.error(error.message);
+     } finally {
+       setUserDataLoading(false);
+     }
+   };
 
   useEffect(() => {
     getMoviesData();
@@ -104,6 +108,7 @@ export const AppContextProvider = (props) => {
   const value = {
     backendUrl,
     userData,
+    userDataLoading,
     setUserData,
     getUserData,
     movies,

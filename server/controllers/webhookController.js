@@ -54,6 +54,7 @@ export const clerkWebhooks = async (req, res) => {
             (userDataFromEvent.last_name || ""),
           email: userDataFromEvent.email_addresses?.[0]?.email_address || "No Email",
           image: userDataFromEvent.image_url,
+          role: userDataFromEvent.public_metadata?.role || "user",
         };
 
         // Use findOneAndUpdate with upsert:true to Create or Update in one go

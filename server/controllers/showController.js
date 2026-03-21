@@ -1,5 +1,6 @@
 import Show from "../models/Show.js";
 import Movie from "../models/Movie.js";
+import Booking from "../models/Booking.js";
 import mongoose from "mongoose";
 
 // Add a new show
@@ -58,6 +59,56 @@ export const getShowsByMovieId = async (req, res) => {
   }
 };
 
+// Book seats for a show
+export const bookSeats = async (req, res) => {
+  try {
+    const { showId, userId, selectedSeats, amount } = req.body;
+
+    // 1. Find show and verify info
+    const show = await Show.findById(showId);
+    if (!show) {
+      return res.status(404).json({ success: false, message: "Show not found" });
+    }
+
+    // 2. Check for seat conflicts
+    const alreadyOccupied = selectedSeats.filter(seat => show.occupiedSeats[seat]);
+    if (alreadyOccupied.length > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Seats ${alreadyOccupied.join(", ")} are already booked.`,
+        occupied: alreadyOccupied
+      });
+    }
+
+    // 3. Mark seats as occupied
+    const newOccupancy = { ...show.occupiedSeats };
+    selectedSeats.forEach(seat => {
+      newOccupancy[seat] = { userId, bookedAt: new Date() };
+    });
+
+    // 4. Atomic Update
+    show.occupiedSeats = newOccupancy;
+    show.markModified("occupiedSeats"); // Important for mixed/object types
+    await show.save();
+
+    // 5. Create Booking Record
+    const booking = new Booking({
+      userId,
+      showId,
+      movieId: show.movie,
+      seats: selectedSeats,
+      amount
+    });
+
+    await booking.save();
+
+    res.json({ success: true, message: "Booking confirmed!", booking });
+  } catch (error) {
+    console.error("Booking Error:", error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Get show by ID
 export const getShowById = async (req, res) => {
   try {
@@ -67,6 +118,17 @@ export const getShowById = async (req, res) => {
       return res.status(404).json({ success: false, message: "Show not found" });
     }
     res.json({ success: true, show });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Delete a show
+export const deleteShow = async (req, res) => {
+  try {
+    const { id } = req.body;
+    await Show.findByIdAndDelete(id);
+    res.json({ success: true, message: "Show deleted successfully" });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
