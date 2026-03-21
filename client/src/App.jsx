@@ -14,6 +14,7 @@ import Dashboard from "./pages/admin/Dashboard";
 import AddShows from "./pages/admin/AddShows";
 import ListShows from "./pages/admin/ListShows";
 import ListBookings from "./pages/admin/ListBookings";
+import VerifyPayment from "./pages/VerifyPayment";
 
 import ProtectAdmin from "./components/ProtectAdmin";
 
@@ -31,6 +32,7 @@ const App = () => {
         <Route path="/favorite" element={<Favorite />} />
         <Route path="/my-bookings" element={<MyBookings />} />
         <Route path="/book/:showId" element={<SeatLayout />} />
+        <Route path="/verify-payment" element={<VerifyPayment />} />
         
         {/* Admin Routes Protected */}
         <Route 

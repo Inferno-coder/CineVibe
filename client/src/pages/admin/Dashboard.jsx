@@ -1,33 +1,64 @@
-import React from "react";
-import { dummyDashboardData } from "../../assets/assets";
+import React, { useContext, useEffect, useState } from "react";
 import { Ticket, DollarSign, Users, Film } from "lucide-react";
+import axios from "axios";
+import { AppContext } from "../../context/AppContext";
+import Loading from "../../components/Loading";
 
 const Dashboard = () => {
-  const { totalBookings, totalRevenue, totalUser, activeShows } =
-    dummyDashboardData;
+  const { backendUrl } = useContext(AppContext);
+  const [stats, setStats] = useState(null);
+  const [shows, setShows] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const [statsRes, showsRes] = await Promise.all([
+        axios.get(backendUrl + "/api/booking/stats"),
+        axios.get(backendUrl + "/api/show/list")
+      ]);
+
+      if (statsRes.data.success) {
+        setStats(statsRes.data.stats);
+      }
+      if (showsRes.data.success) {
+        setShows(showsRes.data.shows);
+      }
+    } catch (error) {
+      console.error("Dashboard Fetch Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  if (loading) return <Loading />;
 
   const statCards = [
     {
       title: "Total Revenue",
-      value: `$${totalRevenue.toLocaleString()}`,
+      value: `$${(stats?.totalRevenue || 0).toLocaleString()}`,
       icon: <DollarSign className="text-emerald-500" size={24} />,
       bg: "bg-emerald-500/10",
     },
     {
       title: "Total Bookings",
-      value: totalBookings,
+      value: stats?.bookingsCount || 0,
       icon: <Ticket className="text-blue-500" size={24} />,
       bg: "bg-blue-500/10",
     },
     {
       title: "Active Shows",
-      value: activeShows.length,
+      value: stats?.showsCount || 0,
       icon: <Film className="text-purple-500" size={24} />,
       bg: "bg-purple-500/10",
     },
     {
       title: "Total Users",
-      value: totalUser,
+      value: stats?.usersCount || 0,
       icon: <Users className="text-orange-500" size={24} />,
       bg: "bg-orange-500/10",
     },
@@ -58,8 +89,9 @@ const Dashboard = () => {
       </div>
 
       <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden backdrop-blur-md">
-        <div className="p-6 border-b border-white/10">
+        <div className="p-6 border-b border-white/10 flex justify-between items-center">
           <h2 className="text-xl font-bold">Recent Active Shows</h2>
+          <span className="text-xs text-gray-500 uppercase tracking-widest">Top 5 Recent</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -68,14 +100,14 @@ const Dashboard = () => {
                 <th className="p-4 font-medium">Movie</th>
                 <th className="p-4 font-medium">Date & Time</th>
                 <th className="p-4 font-medium">Price</th>
-                <th className="p-4 font-medium">Booked Seats</th>
+                <th className="p-4 font-medium">Occupancy</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10 text-sm">
-              {activeShows.slice(0, 5).map((show, idx) => {
-                const dateObj = new Date(show.showDateTime);
+              {shows.slice(0, 5).map((show, idx) => {
+                const occupancy = Object.keys(show.occupiedSeats || {}).length;
                 return (
-                  <tr key={idx} className="hover:bg-white/5 transition">
+                  <tr key={show._id || idx} className="hover:bg-white/5 transition">
                     <td className="p-4 flex items-center gap-4 min-w-[250px]">
                       <img
                         src={show.movie.poster_path}
@@ -87,17 +119,21 @@ const Dashboard = () => {
                       </span>
                     </td>
                     <td className="p-4 text-gray-300 min-w-[150px]">
-                      {dateObj.toLocaleDateString()} at{" "}
-                      {dateObj.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {show.date} at {show.time}
                     </td>
                     <td className="p-4 text-red-500 font-medium min-w-[100px]">
                       ${show.showPrice}
                     </td>
                     <td className="p-4 text-gray-300">
-                      {Object.keys(show.occupiedSeats).length} seats
+                      <div className="flex items-center gap-2">
+                         <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-red-500" 
+                              style={{ width: `${Math.min((occupancy / 100) * 100, 100)}%` }}
+                            />
+                         </div>
+                         <span>{occupancy} seats</span>
+                      </div>
                     </td>
                   </tr>
                 );

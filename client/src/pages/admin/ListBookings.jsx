@@ -1,16 +1,52 @@
-import React, { useState } from "react";
-import { dummyBookingData } from "../../assets/assets";
+import React, { useContext, useEffect, useState } from "react";
 import { Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
+import axios from "axios";
+import { AppContext } from "../../context/AppContext";
+import Loading from "../../components/Loading";
 
 const ListBookings = () => {
-  const [bookings, setBookings] = useState(dummyBookingData);
+  const { backendUrl } = useContext(AppContext);
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleDelete = (id) => {
-    // Note: Since dummyData has duplicated _id for bookings, this will delete all dummy duplicates, simulating a DB deletion
-    setBookings(bookings.filter((b) => b._id !== id));
-    toast.success("Booking cancelled successfully");
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
+      const { data } = await axios.get(backendUrl + "/api/booking/list");
+      if (data.success) {
+        setBookings(data.bookings);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to fetch bookings");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to cancel this booking?")) return;
+    
+    try {
+      // Note: Implement /api/booking/delete if not exists, but for now we follow the flow
+      const { data } = await axios.post(backendUrl + "/api/booking/delete", { bookingId: id });
+      if (data.success) {
+        toast.success("Booking cancelled successfully");
+        fetchBookings();
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error("Error cancelling booking");
+    }
+  };
+
+  if (loading) return <Loading />;
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -29,7 +65,7 @@ const ListBookings = () => {
                 <th className="p-4 font-medium">User</th>
                 <th className="p-4 font-medium">Movie</th>
                 <th className="p-4 font-medium hidden lg:table-cell">
-                  Show Time
+                  Show Details
                 </th>
                 <th className="p-4 font-medium text-center">Seats</th>
                 <th className="p-4 font-medium">Amount</th>
@@ -38,56 +74,54 @@ const ListBookings = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10 text-sm">
-              {bookings.map((booking, index) => {
-                const dateObj = new Date(booking.show.showDateTime);
-                // Creating a unique key since dummyBookingData has duplicate _id
-                const uniqueKey = `${booking._id}-${index}`;
+              {bookings.map((booking) => {
+                const show = booking.showId;
+                const movie = booking.movieId || show?.movie;
+                const userObj = booking.userId;
 
                 return (
-                  <tr key={uniqueKey} className="hover:bg-white/5 transition">
+                  <tr key={booking._id} className="hover:bg-white/5 transition">
                     <td className="p-4 min-w-[150px]">
-                      <span className="font-semibold">{booking.user.name}</span>
+                      <div className="flex flex-col">
+                        <span className="font-semibold">{userObj?.name || "Unknown User"}</span>
+                        <span className="text-xs text-gray-500">{userObj?.email}</span>
+                      </div>
                     </td>
                     <td className="p-4 flex items-center gap-3 min-w-[200px]">
-                      <img
-                        src={booking.show.movie.poster_path}
-                        alt={booking.show.movie.title}
-                        className="w-10 h-10 rounded-lg object-cover shadow-sm hidden sm:block"
-                      />
+                      {movie?.poster_path && (
+                        <img
+                          src={movie.poster_path}
+                          alt={movie.title}
+                          className="w-10 h-10 rounded-lg object-cover shadow-sm hidden sm:block"
+                        />
+                      )}
                       <span className="font-medium line-clamp-1">
-                        {booking.show.movie.title}
+                        {movie?.title || "Movie Deleted"}
                       </span>
                     </td>
                     <td className="p-4 text-gray-300 min-w-[150px] hidden lg:table-cell">
                       <div className="flex flex-col">
-                        <span>
-                          {dateObj.toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          {dateObj.toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
+                        <span>{show?.date || "N/A"}</span>
+                        <span className="text-xs text-gray-400">{show?.time}</span>
                       </div>
                     </td>
                     <td className="p-4 text-center">
-                      <span className="bg-white/10 px-2 py-1 rounded-md text-xs font-mono">
-                        {booking.bookedSeats.length}
-                      </span>
+                      <div className="flex flex-wrap justify-center gap-1 max-w-[100px] mx-auto">
+                        {(booking.selectedSeats || []).map(seat => (
+                          <span key={seat} className="bg-white/10 px-1.5 py-0.5 rounded text-[10px] font-mono">
+                            {seat}
+                          </span>
+                        ))}
+                      </div>
                     </td>
                     <td className="p-4 text-red-500 font-bold">
                       ${booking.amount}
                     </td>
                     <td className="p-4 text-center">
                       <span
-                        className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${booking.isPaid ? "bg-green-500/20 text-green-400 border border-green-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}
+                        className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${booking.status === "Confirmed" ? "bg-green-500/20 text-green-400 border border-green-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}
                       >
-                        {booking.isPaid ? "Paid" : "Pending"}
+                        {booking.status}
                       </span>
                     </td>
                     <td className="p-4">

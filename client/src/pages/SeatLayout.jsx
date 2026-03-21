@@ -68,16 +68,17 @@ const SeatLayout = () => {
 
     try {
       setBookingLoading(true);
-      const { data } = await axios.post(backendUrl + "/api/show/book", {
+      const { data } = await axios.post(backendUrl + "/api/booking/create-checkout", {
         showId,
         userId: userData._id,
         selectedSeats,
-        amount: selectedSeats.length * ticketPrice
+        amount: selectedSeats.length * ticketPrice,
+        movieTitle: show.movie.title
       });
 
       if (data.success) {
-        toast.success(data.message);
-        navigate("/my-bookings");
+        toast.loading("Redirecting to payment...");
+        window.location.replace(data.session_url);
       } else {
         toast.error(data.message);
       }

@@ -6,6 +6,7 @@ import BlurColor from "../components/BlurColor";
 import DateSelect from "../components/DateSelect";
 import { AppContext } from "../context/AppContext";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 const MovieDetails = () => {
   const { id } = useParams();

@@ -130,10 +130,10 @@ const MyBookings = () => {
                       <div className="flex justify-between items-end">
                         <div>
                           <p className="text-xs text-gray-500 mb-1 uppercase tracking-wider">
-                            Seats ({booking.seats.length})
+                            Seats ({(booking.selectedSeats || []).length})
                           </p>
                           <p className="font-semibold text-sm">
-                            {booking.seats.join(", ")}
+                            {(booking.selectedSeats || []).join(", ")}
                           </p>
                         </div>
                         <div className="text-right flex flex-col items-end gap-2">

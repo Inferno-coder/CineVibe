@@ -1,13 +1,17 @@
 import React from "react";
 import { UserCircle } from "lucide-react";
 import { assets } from "../../assets/assets";
+import { Link } from "react-router-dom";
 
 const AdminNavbar = () => {
   return (
     <div className="flex items-center justify-between px-6 py-4 bg-black border-b border-white/10 sticky top-0 z-50">
       <div className="flex items-center gap-3">
-        <img src={assets.logo} alt="Logo" className="h-8" />
-        <span className="text-white text-xl font-bold tracking-wider hidden sm:block">
+      <Link to="/" className="select-none">
+          <span className="text-2xl font-extrabold bg-gradient-to-r from-red-500 via-pink-500 to-yellow-400 bg-clip-text text-transparent tracking-wide">
+            CineVibe
+          </span>
+        </Link>        <span className="text-white text-xl font-bold tracking-wider hidden sm:block">
           ADMIN PANEL
         </span>
       </div>
