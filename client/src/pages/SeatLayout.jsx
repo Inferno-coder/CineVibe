@@ -1,47 +1,43 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { dummyDateTimeData, dummyShowsData } from "../assets/assets";
+import axios from "axios";
+import { AppContext } from "../context/AppContext";
 import Loading from "../components/Loading";
 import { ChevronLeftIcon } from "lucide-react";
 import toast from "react-hot-toast";
 
 const SeatLayout = () => {
-  const { id, date } = useParams();
+  const { showId } = useParams();
+  const { backendUrl } = useContext(AppContext);
   const [selectedSeats, setSelectedSeats] = useState([]);
-  const [selectedTime, setSelectedTime] = useState(null);
   const [show, setShow] = useState(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const ticketPrice = 15; // standard price
 
-  const getShow = () => {
-    const movieShow = dummyShowsData.find((s) => String(s._id) === id);
-    if (movieShow) {
-      setShow({
-        movie: movieShow,
-        dataTime: dummyDateTimeData,
-      });
-      // pre-select first valid time for date
-      const availableTimes = dummyDateTimeData[date];
-      if (availableTimes && availableTimes.length > 0) {
-        setSelectedTime(availableTimes[0].time);
+  const fetchShowData = async () => {
+    try {
+      const { data } = await axios.get(backendUrl + "/api/show/" + showId);
+      if (data.success) {
+        setShow(data.show);
       }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error loading show data");
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Artificial delay to show off the cool loading anim
-    const timeout = setTimeout(() => {
-      getShow();
-    }, 800);
-    return () => clearTimeout(timeout);
-  }, [id, date]);
+    fetchShowData();
+  }, [showId, backendUrl]);
 
   // Seat Configuration
   const rows = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
   const cols = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
-  // Dummy occupied seats
-  const occupiedSeats = ["C4", "C5", "F7", "F8", "G10", "D6", "D7"];
+  // Real occupied seats from show object
+  const occupiedSeats = show ? Object.keys(show.occupiedSeats) : [];
 
   const handleSeatClick = (seatId) => {
     if (occupiedSeats.includes(seatId)) return;
@@ -63,10 +59,14 @@ const SeatLayout = () => {
       return;
     }
     toast.success("Proceeding to payment...");
+    // Future: navigate to payment page with showId and selectedSeats
     navigate("/my-bookings");
   };
 
-  return show ? (
+  if (loading) return <Loading />;
+  if (!show) return <div className="min-h-screen flex items-center justify-center text-white">Show not found</div>;
+
+  return (
     <div className="min-h-screen bg-black text-white px-4 md:px-10 pb-32 pt-28 relative overflow-hidden">
       {/* Background glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-96 bg-red-600/10 blur-[120px] rounded-full pointer-events-none" />
@@ -231,8 +231,6 @@ const SeatLayout = () => {
         </div>
       )}
     </div>
-  ) : (
-    <Loading />
   );
 };
 

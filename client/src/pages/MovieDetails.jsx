@@ -1,15 +1,62 @@
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { StarIcon, Clock, Calendar, Play, Heart } from "lucide-react";
-import { dummyDateTimeData, dummyShowsData } from "../assets/assets";
+import { dummyDateTimeData } from "../assets/assets";
 import BlurColor from "../components/BlurColor";
 import DateSelect from "../components/DateSelect";
+import { AppContext } from "../context/AppContext";
+import axios from "axios";
 
 const MovieDetails = () => {
   const { id } = useParams();
+  const { backendUrl } = useContext(AppContext);
+  const [movie, setMovie] = useState(null);
+  const [shows, setShows] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
 
-  const movie = dummyShowsData.find((show) => String(show._id) === id);
+  const fetchMovieData = async () => {
+    try {
+      // We are now fetching by TMDB ID (passed in the URL from Home page)
+      const { data } = await axios.get(backendUrl + "/api/movie/tmdb/" + id);
+      if (data.success) {
+        setMovie(data.movie);
+      } else {
+        console.error("Backend error:", data.message);
+      }
+    } catch (error) {
+      console.error("Fetch Movie Data Error:", error.response?.data?.message || error.message);
+      // Optional: import toast from react-hot-toast if available or just log
+    }
+  };
+
+  const fetchShowsData = async () => {
+    try {
+      const { data } = await axios.get(backendUrl + "/api/show/movie/" + id);
+      if (data.success) {
+        setShows(data.shows);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      await Promise.all([fetchMovieData(), fetchShowsData()]);
+      setLoading(false);
+    };
+    fetchData();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-400">
+        <div className="animate-pulse">Loading Movie Details...</div>
+      </div>
+    );
+  }
 
   if (!movie) {
     return (
@@ -147,7 +194,7 @@ const MovieDetails = () => {
         </div>
       </div>
 
-      <DateSelect id={id} dateTime={dummyDateTimeData} />
+      {shows.length > 0 && <DateSelect id={id} shows={shows} />}
     </div>
   );
 };

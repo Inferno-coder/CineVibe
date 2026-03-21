@@ -6,7 +6,7 @@ const MovieCard = ({ movie }) => {
   const navigate = useNavigate();
 
   const goToMovie = () => {
-    navigate(`/movies/${movie.id}`);
+    navigate(`/movies/${movie._id}`);
     scrollTo(0, 0);
   };
 
@@ -39,10 +39,12 @@ const MovieCard = ({ movie }) => {
         {/* Meta */}
         <p className="mt-1 text-xs text-gray-300">
           {new Date(movie.release_date).getFullYear()} •{" "}
-          {movie.genres
-            .slice(0, 2)
-            .map((genre) => genre.name)
-            .join(" | ")}{" "}
+          {movie.genres && movie.genres.length > 0
+            ? movie.genres
+                .slice(0, 2)
+                .map((genre) => genre.name)
+                .join(" | ")
+            : "Movie"}{" "}
         </p>
 
         {/* Actions */}

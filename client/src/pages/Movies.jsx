@@ -1,10 +1,12 @@
-import React from "react";
-import { dummyShowsData } from "../assets/assets";
+import React, { useContext } from "react";
+import { AppContext } from "../context/AppContext";
 import MovieCard from "../components/MovieCard";
 import BlurColor from "../components/BlurColor";
 
 const Movies = () => {
-  if (!dummyShowsData.length) {
+  const { movies } = useContext(AppContext);
+
+  if (!movies.length) {
     return (
       <div className="flex min-h-screen items-center justify-center text-gray-400">
         No movies available
@@ -30,7 +32,7 @@ const Movies = () => {
 
       {/* Movies Grid */}
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-        {dummyShowsData.map((movie) => (
+        {movies.map((movie) => (
           <MovieCard key={movie._id} movie={movie} />
         ))}
       </div>

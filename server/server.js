@@ -6,6 +6,8 @@ import connectCloudinary from "./config/cloudinary.js";
 import { clerkMiddleware } from "@clerk/express";
 import { clerkWebhooks } from "./controllers/webhookController.js";
 import userRouter from "./routes/userRouter.js";
+import movieRouter from "./routes/movieRouter.js";
+import showRouter from "./routes/showRouter.js";
 
 // App Config
 const app = express();
@@ -29,6 +31,8 @@ app.get("/", (req, res) => {
 
 app.post("/api/webhooks/clerk", clerkWebhooks);
 app.use("/api/user", userRouter);
+app.use("/api/movie", movieRouter);
+app.use("/api/show", showRouter);
 
 // Listener
 app.listen(port, () => {
